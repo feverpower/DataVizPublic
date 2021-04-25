@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://d3js.org/d3.v6.min.js"></script>
+        <style>
+            #vizBody {
+                border: 1px solid grey;
+                background: rgb(223, 220, 220);
+            }
+        </style>
+    </head>
+    <body>
+        <div id="vizBody"></div>
+    </body>
+    <script>
+        //dimensions of the graph with margins
+        let margin = {top: 10, 
+                      right: 30,
+                      bottom: 30,
+                      left: 70},
+            maxWidth = 460, //max size of the viz space
+            maxHeight = 400, //max size of the viz space
+            width = maxWidth - margin.left - margin.right, //size of chart space (to center within viz space)
+            height = maxHeight - margin.top - margin.bottom; //size of chart space (to center within viz space)            
+        
+        //creating the viz space and a group centered within the viz space
+        let vizSpace = d3.select("#vizBody")
+                         .append("svg") //addition of viz space (svg)
+                            .attr("width", maxWidth) //max width of viz space
+                            .attr("height", maxHeight) //max height of viz space
+                         .append("g") //addition of group/sections with viz space (chart space)
+                            .attr("transform",
+                                  "translate(" + margin.left + "," + margin.top + ")"); //moving the group/section inside viz space
+
+        d3.csv("data2.csv")
+            .then(showData)
+        
+        function showData(data){
+            
+            //format field values and selects required fields
+            data = data.map(d => ({
+                country: d.country,
+                sales: +d.sales //formats as numeric
+            }))
+
+            //x Scale
+            let xScale = d3.scaleBand()
+                           .domain(data.map(d => d.country)) //list of country)
+                           .range([0, width]) //range filling chart space
+                           .padding(0.2); //space between scale values
+            
+            //y Scale
+            let yScale = d3.scaleLinear()
+                           .domain([0, d3.max(data, d => d.sales)])
+                           .range([height, 0]);
+
+            vizSpace.append("g") //adding section to hold xScale (within chart space)
+                    .attr("transform", 
+                          "translate(0," + height + ")") //moving this section to bottom of chart space (0 => height)
+                    .call(d3.axisBottom(xScale)); //the bottom in axisbottom is to put values below axis line, not bottom of the chart space 
+            
+            vizSpace.append("g") //adding section to hold yScale (within chart space)
+                    .call(d3.axisLeft(yScale));
+
+            //first time sets up for data points and elements; 
+            //after enter, this call brings all elements that has data point associated (called update)
+            let join = vizSpace.selectAll("rect") //empty elements
+                               .data(data) //joining chart area with data (setting up) 
+                               
+
+            join.enter() //access the data 
+                .append("rect") //create element for each data point in data; this step merges data to elements
+                //second time through, if data is added, then this merge added data
+                .attr("x", d => xScale(d.country)) //positions of XScale
+                .attr("y", d => yScale(d.sales)) //positions of yScale
+                .style("width", xScale.bandwidth()) //width of the bar
+                .style("height", d => height - yScale(d.sales)) //inverse height
+                .style("fill", "blue")
+
+            //first time
+                //selectAll.data - sets stage (two separate circles - one for element, other for data)
+                //selectAll.data.enter() - access
+                //selectAll.data.enter().append - merge data points and elements (merged into one circle) 
+                //(enter = update)
+            //second time through; data added
+                //now there are data points that does not have elements
+                //selectAll.data - will bring only the ones that has data points and elements
+                //selectAll.data.enter().append - merge the added data and create elements for the added data points
+            //second time through; data remove
+                //now there are elements without data points
+
+        }
+    </script>
+</html>
